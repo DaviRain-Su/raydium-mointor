@@ -3,7 +3,7 @@ use solana_client::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 use std::str::FromStr;
 
-pub async fn get_sol_price() -> Result<f64, Box<dyn std::error::Error>> {
+pub async fn get_sol_price() -> anyhow::Result<f64> {
     let url =
         "https://api-v3.raydium.io/pools/info/ids?ids=8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj";
     let response = reqwest::get(url).await?.text().await?;
@@ -12,24 +12,22 @@ pub async fn get_sol_price() -> Result<f64, Box<dyn std::error::Error>> {
     // 从JSON中提取价格
     let price = json["data"][0]["price"]
         .as_f64()
-        .ok_or("Failed to extract price from JSON")?;
+        .ok_or(anyhow::anyhow!("Failed to extract price from JSON"))?;
 
     Ok(price)
 }
 
-pub async fn get_token_supply(token_address: &str) -> Result<u64, Box<dyn std::error::Error>> {
+pub async fn get_token_supply(token_address: &str) -> anyhow::Result<u64> {
     let rpc_url = "https://api.mainnet-beta.solana.com";
     let client = RpcClient::new(rpc_url.to_string());
 
     let token_pubkey = Pubkey::from_str(token_address)?;
     let supply = client.get_token_supply(&token_pubkey)?;
-    println!("SUPPLY: {:?}", supply);
+    log::debug!("SUPPLY: {:?}", supply);
     Ok(supply.amount.parse().unwrap())
 }
 
-pub async fn calculate_market_cap(
-    token_data: &serde_json::Value,
-) -> Result<f64, Box<dyn std::error::Error>> {
+pub async fn calculate_market_cap(token_data: &serde_json::Value) -> anyhow::Result<f64> {
     let token_address = token_data["mintB"]["address"].as_str().unwrap();
     let token_decimals = token_data["mintB"]["decimals"].as_u64().unwrap();
     let price_in_sol = 1.0 / token_data["price"].as_f64().unwrap();
