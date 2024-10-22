@@ -4,6 +4,8 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
 
+pub mod utils;
+
 #[derive(Debug)]
 struct PoolInfo {
     id: String,
