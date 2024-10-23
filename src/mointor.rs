@@ -1,6 +1,6 @@
 use anyhow::Result;
 use futures::future::join_all;
-use log::{error, info, warn, LevelFilter};
+use log::info;
 use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
@@ -21,7 +21,7 @@ pub enum MonitorStatus {
 pub struct MonitorEvent {
     pub item_name: String,
     pub status: MonitorStatus,
-    timestamp: Instant,
+    pub timestamp: Instant,
 }
 
 #[derive(Clone)]

@@ -1,7 +1,6 @@
 use crate::mointor::MonitorService;
 use crate::mointor::MonitorStatus;
 use crate::raydium_pool::check_raydium_pools;
-use crate::raydium_pool::filter_tokens;
 use log::{error, info, warn, LevelFilter};
 
 use std::error::Error;
@@ -14,25 +13,6 @@ pub mod utils;
 #[derive(StructOpt, Debug)]
 #[structopt(name = "raydium_tool")]
 pub enum Command {
-    /// Filter tokens based on volume/marketcap ratio
-    Filter {
-        /// Minimum volume/marketcap ratio
-        #[structopt(long, default_value = "0.8")]
-        min_ratio: f64,
-
-        /// Maximum volume/marketcap ratio
-        #[structopt(long, default_value = "1.0")]
-        max_ratio: f64,
-
-        /// Number of results to display
-        #[structopt(short, long, default_value = "10")]
-        limit: usize,
-
-        /// Display detailed information
-        #[structopt(short, long)]
-        verbose: bool,
-    },
-
     /// Run the monitoring service
     Monitor {
         /// Interval in seconds for checking Raydium pools
@@ -51,14 +31,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let command = Command::from_args();
 
     match command {
-        Command::Filter {
-            min_ratio,
-            max_ratio,
-            limit,
-            verbose,
-        } => {
-            filter_tokens(min_ratio, max_ratio, limit, verbose).await?;
-        }
         Command::Monitor { interval: _ } => {
             info!("Starting monitoring service...");
 
