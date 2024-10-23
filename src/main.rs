@@ -2,8 +2,6 @@ use crate::mointor::MonitorService;
 use crate::mointor::MonitorStatus;
 use crate::raydium_pool::check_raydium_pools;
 use crate::raydium_pool::filter_tokens;
-use crate::raydium_pool::token_info;
-use crate::raydium_pool::top_volume;
 use log::{error, info, warn, LevelFilter};
 
 use std::error::Error;
@@ -35,19 +33,6 @@ pub enum Command {
         verbose: bool,
     },
 
-    /// List top tokens by volume
-    TopVolume {
-        /// Number of tokens to display
-        #[structopt(short, long, default_value = "10")]
-        limit: usize,
-    },
-
-    /// Show details for a specific token
-    TokenInfo {
-        /// Token symbol
-        #[structopt(name = "SYMBOL")]
-        symbol: String,
-    },
     /// Run the monitoring service
     Monitor {
         /// Interval in seconds for checking Raydium pools
@@ -73,12 +58,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
             verbose,
         } => {
             filter_tokens(min_ratio, max_ratio, limit, verbose).await?;
-        }
-        Command::TopVolume { limit } => {
-            top_volume(limit).await?;
-        }
-        Command::TokenInfo { symbol } => {
-            token_info(&symbol).await?;
         }
         Command::Monitor { interval: _ } => {
             info!("Starting monitoring service...");
