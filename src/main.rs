@@ -1,12 +1,14 @@
 use crate::mointor::MonitorService;
+use crate::mointor::MonitorStatus;
 use crate::raydium_pool::check_raydium_pools;
 use crate::raydium_pool::filter_tokens;
 use crate::raydium_pool::token_info;
 use crate::raydium_pool::top_volume;
+use log::{error, info, warn, LevelFilter};
+
 use std::error::Error;
 use std::time::Duration;
 use structopt::StructOpt;
-
 pub mod mointor;
 pub mod raydium_pool;
 pub mod utils;
@@ -56,7 +58,10 @@ pub enum Command {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    env_logger::init();
+    // 初始化日志系统
+    env_logger::Builder::new()
+        .filter_level(LevelFilter::Info)
+        .init();
 
     let command = Command::from_args();
 
@@ -75,14 +80,39 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Command::TokenInfo { symbol } => {
             token_info(&symbol).await?;
         }
-        Command::Monitor { interval } => {
+        Command::Monitor { interval: _ } => {
+            info!("Starting monitoring service...");
+
             let mut monitor = MonitorService::new();
-            monitor.add_item(
-                "Raydium Top 10 Pools",
-                Duration::from_secs(interval),
-                check_raydium_pools,
-            );
-            monitor.run();
+
+            // 添加内存监控
+            monitor
+                .add_item("raydium pool", Duration::from_secs(5), || async {
+                    check_raydium_pools().await
+                })
+                .await;
+
+            // 启动监控
+            monitor.run().await?;
+
+            // 订阅监控事件
+            let mut rx = monitor.tx.subscribe();
+            tokio::spawn(async move {
+                while let Ok(event) = rx.recv().await {
+                    match &event.status {
+                        MonitorStatus::OK(msg) => info!("{}: {}", event.item_name, msg),
+                        MonitorStatus::Warning(msg) => warn!("{}: {}", event.item_name, msg),
+                        MonitorStatus::Error(err) => error!("{}: {}", event.item_name, err),
+                    }
+                }
+            });
+
+            // 运行一段时间
+            info!("Monitor service running...");
+            tokio::time::sleep(Duration::from_secs(30)).await;
+
+            // 停止服务
+            monitor.stop().await;
         }
     }
 

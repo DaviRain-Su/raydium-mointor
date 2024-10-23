@@ -24,11 +24,8 @@ async fn fetch_raydium_data(page: u32) -> anyhow::Result<Value> {
     Ok(json)
 }
 
-pub fn check_raydium_pools() -> anyhow::Result<String> {
-    let runtime = tokio::runtime::Runtime::new().unwrap();
-    let data = runtime
-        .block_on(fetch_raydium_data(1))
-        .map_err(|e| anyhow::anyhow!(e))?;
+pub async fn check_raydium_pools() -> anyhow::Result<String> {
+    let data = fetch_raydium_data(1).await?;
 
     if let Some(pools) = data["data"]["data"].as_array() {
         let mut pool_infos: Vec<PoolInfo> = pools
@@ -62,7 +59,7 @@ pub fn check_raydium_pools() -> anyhow::Result<String> {
         pool_infos.sort_by(|a, b| b.volume_24h.partial_cmp(&a.volume_24h).unwrap());
 
         // Get top 10 pools
-        let top_10 = pool_infos.into_iter().take(10).collect::<Vec<_>>();
+        let top_10 = pool_infos.into_iter().take(20).collect::<Vec<_>>();
 
         let mut result = String::new();
         for (index, pool) in top_10.iter().enumerate() {
