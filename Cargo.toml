@@ -16,3 +16,5 @@ futures = "0.3.31"
 anyhow = "1.0.90"
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "registry"] }
+chrono = "0.4.38"
+lazy_static = "1.5.0"

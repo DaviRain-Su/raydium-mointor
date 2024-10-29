@@ -1,3 +1,4 @@
+use core::f64;
 use serde_json::Value;
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
@@ -39,6 +40,29 @@ pub async fn calculate_market_cap(token_data: &serde_json::Value) -> anyhow::Res
     let price_in_usdc = price_in_sol * sol_price;
 
     let total_supply = get_token_supply(token_address).await?;
+    let total_supply_adjusted = total_supply as f64 / 10f64.powi(token_decimals as i32);
+
+    let market_cap = total_supply_adjusted * price_in_usdc;
+
+    Ok(market_cap)
+}
+
+pub async fn calculate_market_cap_v1(
+    token_address: String,
+    token_decimals: u64,
+    price: f64,
+) -> anyhow::Result<f64> {
+    let token_address = token_address;
+    let token_decimals = token_decimals;
+    let price_in_sol = 1.0 / price;
+
+    // 获取 SOL 价格（以 USDC 计）
+    let sol_price = get_sol_price().await?;
+
+    // 将 SOL 价格转换为 USDC 价格
+    let price_in_usdc = price_in_sol * sol_price;
+
+    let total_supply = get_token_supply(&token_address).await?;
     let total_supply_adjusted = total_supply as f64 / 10f64.powi(token_decimals as i32);
 
     let market_cap = total_supply_adjusted * price_in_usdc;
